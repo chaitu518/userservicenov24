@@ -1,10 +1,5 @@
 package com.example.userservicenov24.configs;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
@@ -48,18 +43,13 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 public class SecurityConfig {
 
     @Bean
-    @Order(1)
+    @Order
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                OAuth2AuthorizationServerConfigurer.authorizationServer();
-
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+                .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
         http
-                .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-                .with(authorizationServerConfigurer, (authorizationServer) ->
-                        authorizationServer
-                                .oidc(Customizer.withDefaults())	// Enable OpenID Connect 1.0
-                )
                 // Redirect to the login page when not authenticated from the
                 // authorization endpoint
                 .exceptionHandling((exceptions) -> exceptions
@@ -67,13 +57,15 @@ public class SecurityConfig {
                                 new LoginUrlAuthenticationEntryPoint("/login"),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )
-                );
-
+                )
+                // Accept access tokens for User Info and/or Client Registration
+                .oauth2ResourceServer((resourceServer) -> resourceServer
+                        .jwt(Customizer.withDefaults()));
         return http.build();
     }
 
     @Bean
-    @Order(2)
+    @Order
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
             throws Exception {
         http
@@ -87,34 +79,34 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails userDetails = User.builder()
-                .username("user")
-                .password("$2a$12$pVZe0WucfzRIfo3V7MQjGexNH1/8AFTVsl04FjdV03MQXrIXg7dmS")//
-                .roles("USER")
-                .build();
+//    @Bean
+//    public UserDetailsService userDetailsService() {
+//        UserDetails userDetails = User.builder()
+//                .username("user")
+//                .password("$2a$12$26jowvie4Kvcqf3F1jmHYOmI17nJLXSpnGc074yplk2BG3XSJicbi")
+//                .roles("USER")
+//                .build();
+//
+//        return new InMemoryUserDetailsManager(userDetails);
+//    }
 
-        return new InMemoryUserDetailsManager(userDetails);
-    }
-
-    @Bean
-    public RegisteredClientRepository registeredClientRepository() {
-        RegisteredClient oidcClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("oidc-client")
-                .clientSecret("$2a$12$PTtBt2JXdgI8WoouLUDW1uHfGde7t6JeTZAuJhWuQ9PqEm.R/GS2G")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri("https://oauth.pstmn.io/v1/callback")
-                .postLogoutRedirectUri("https://oauth.pstmn.io/v1/callback")
-                .scope(OidcScopes.OPENID)
-                .scope(OidcScopes.PROFILE)
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-                .build();
-
-        return new InMemoryRegisteredClientRepository(oidcClient);
-    }
+//    @Bean
+//    public RegisteredClientRepository registeredClientRepository() {
+//        RegisteredClient oidcClient = RegisteredClient.withId(UUID.randomUUID().toString())
+//                .clientId("oidc-client")
+//                .clientSecret("$2a$12$SPQiL6xqIg23jb8cKFYAq.zQa7rBX1fwFDxfxQSxV4lpJhkeDyJBC")
+//                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+//                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+//                .redirectUri("https://oauth.pstmn.io/v1/callback")
+//                .postLogoutRedirectUri("https://oauth.pstmn.io/v1/callback")
+//                .scope(OidcScopes.OPENID)
+//                .scope(OidcScopes.PROFILE)
+//                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
+//                .build();
+//
+//        return new InMemoryRegisteredClientRepository(oidcClient);
+//    }
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() {

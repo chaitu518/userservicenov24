@@ -3,6 +3,7 @@ package com.example.userservicenov24.models;
 import com.example.userservicenov24.dtos.UserDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +19,7 @@ public class User extends BaseModel {
     private String email;
     private String hashedPassword;
     private boolean isEmailVerified;
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     List<Role> roles;
     public UserDto from(){
         UserDto userDto = new UserDto();
